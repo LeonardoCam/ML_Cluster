@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CLIP Image Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .search-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .results {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .image-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      width: 200px;
+    }
+    .image-card img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    button {
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CLIP Image Search</h1>
+
+  <div class="search-container">
+    <input type="text" id="textQuery" placeholder="Buscar por texto" />
+    <button onclick="searchText()">Buscar por texto</button>
+    <input type="file" id="imageFile" />
+    <button onclick="searchImage()">Buscar por imagen</button>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <script>
+    async function searchText() {
+      const query = document.getElementById("textQuery").value;
+      const res = await fetch("http://localhost:3000/search/text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+      const data = await res.json();
+      showResults(data);
+    }
+
+    async function searchImage() {
+      const fileInput = document.getElementById("imageFile");
+      if (!fileInput.files.length) return alert("Selecciona un archivo");
+
+      const formData = new FormData();
+      formData.append("image", fileInput.files[0]);
+
+      const res = await fetch("http://localhost:3000/search/image", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      showResults(data);
+    }
+
+    function showResults(data) {
+      const container = document.getElementById("results");
+      container.innerHTML = "";
+      data.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "image-card";
+        card.innerHTML = `<img src="./${item.path}" alt="result"><p>${item.path}</p>`;
+        container.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
+

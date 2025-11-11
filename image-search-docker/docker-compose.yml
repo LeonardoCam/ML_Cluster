@@ -1,0 +1,58 @@
+version: "3.8"
+services:
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    image: image-search-postgres:latest
+    container_name: image_search_db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${PGDATABASE}
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backend/dataset:/dataset:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER} -d ${PGDATABASE}"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: image-search-backend:latest
+    container_name: image_search_backend
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app 
+      - ./backend/uploads:/app/uploads
+      - ./backend/dataset:/app/dataset:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: image-search-frontend:latest
+    container_name: image_search_frontend
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
